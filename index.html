@@ -307,7 +307,7 @@ const WALLS=[
 [30.5,34.4,30.9,34.4,"solid"],[30.9,34.4,33.9,34.4,"teak"],[34,33.4,34,36.25,"solid"],
 [34,36.25,47.25,36.25,"solid"],[34,36.25,34,38.6,"solid"],[34,38.6,34,41.6,"teak"],[34,41.6,34,42,"solid"],
 [30.5,42,30.9,42,"solid"],[30.9,42,33.9,42,"teak"],[33.9,42,47.25,42,"solid"],
-  [30.5,52.5,47.25,52.5,"glass",{up:"louvre"}],[24.75,42,30.5,42,"teak",{ext:true}],
+  [30.5,52.5,47.25,52.5,"glass",{up:"louvre"}],[24.75,42,30.5,42,"teak",{main:-1}],
   [30.5,52.5,30.5,61.6,"brick",{h:8}],[47.25,52.5,47.25,61.3,"brick",{h:8}],[47.25,-9.3,47.25,0,"brick",{h:8}],
 ];
 
@@ -609,8 +609,10 @@ function build(key){
     else if(kind==="window"){ mesh(prism(ax,az,bx,bz,0.75,0,0,lvl+3,lvl+3),M.plaster,dyn);
       mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); }
     else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);
-      if(!o.ext){ const ux=(bx-ax)/L*0.25, uz=(bz-az)/L*0.25;   // perforated vent panel low in each inside door, the house's joinery feature
-        mesh(prism(ax+ux,az+uz,bx-ux,bz-uz,0.34,lvl+0.35,lvl+0.35,lvl+2.1,lvl+2.1),texMat(TX.perf,Math.max(1,L*1.5),1.75*1.5),dyn); } }
+      if(!o.ext){ const ux=(bx-ax)/L*0.25, uz=(bz-az)/L*0.25;   // perforated vent panels at the top and bottom of each inside door and the main door, the house's joinery feature
+        for(const y of [lvl+0.35,lvl+5.9]){ mesh(prism(ax+ux,az+uz,bx-ux,bz-uz,0.34,y,y,y+1.75,y+1.75),texMat(TX.perf,Math.max(1,L*1.5),1.75*1.5),dyn);
+          if(o.main){ const s=o.main*0.19, nx=-(bz-az)/L*s, nz=(bx-ax)/L*s, m=M.mesh.clone(); m.map=texRep(M.mesh.map,L/0.08,1.75/0.08);   // fine insect mesh on the inside face
+            mesh(prism(ax+ux+nx,az+uz+nz,bx-ux+nx,bz-uz+nz,0.02,y,y,y+1.75,y+1.75),m,dyn,false); } } } }
     else if(kind==="glass") glassWall(ax,az,bx,bz,tA,tB,lvl,o.up||"solid",L,dyn,o.panes,o.door);
     else if(kind==="nook") nook(ax,az,bz,tA,lvl,dyn);
     else if(kind==="head") mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);   // open below, wall above the opening
