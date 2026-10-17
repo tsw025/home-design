@@ -214,6 +214,7 @@ const TX={
   metal: canvasTex(8,64,(g,w,h)=>{ for(let y=0;y<h;y++){ const v=Math.round(84+26*Math.sin(y/h*Math.PI*2)); g.fillStyle=`rgb(${v},${v+4},${v+6})`; g.fillRect(0,y,w,1);} }),
   ceiling: canvasTex(64,64,(g,w,h)=>{ g.fillStyle="#C49A6C"; g.fillRect(0,0,w,h); g.fillStyle="#A97F55"; for(let y=0;y<h;y+=16) g.fillRect(0,y,w,1.5); }),
   deck: canvasTex(64,256,(g,w,h)=>{ g.fillStyle="#9A6B45"; g.fillRect(0,0,w,h); for(let x=0;x<w;x+=16){ g.fillStyle=["#8E613D","#A6774F","#93653F","#A0704A"][x/16%4]; g.fillRect(x+1,0,14,h);} }),
+  perf: canvasTex(128,128,(g,w,h)=>{ g.fillStyle="#7E4D2C"; g.fillRect(0,0,w,h); g.fillStyle="#20140A"; for(let i=0;i<4;i++)for(let j=0;j<4;j++){ g.beginPath(); g.arc(i*32+16,j*32+16,7,0,7); g.fill(); } }),
   screen: canvasTex(128,128,(g,w,h)=>{ g.fillStyle="#CFCBC2"; g.fillRect(0,0,w,h); g.fillStyle="#3B3A36"; for(let i=0;i<4;i++)for(let j=0;j<4;j++){ g.beginPath(); g.arc(i*32+16,j*32+16,10,0,7); g.fill(); } }),
 };
 function texRep(t,u,v){ const c=t.clone(); c.needsUpdate=true; c.repeat.set(u,v); return c; }
@@ -294,9 +295,9 @@ const ROOMS=[
 // Walls: [ax,az,bx,bz, kind, opts]. Heights come from the roof above unless h is given.
 const WALLS=[
   // glass walls: piers at both ends, doors below an 18" beam, then up = what fills the wall above the beam
-  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5}],[0,3.4,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
+  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5,ext:true}],[0,3.4,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
   [0,0,6,0,"solid"],[6,0,15.25,0,"window"],[15.25,0,30.5,0,"glass",{up:"glass",panes:2}],[30.5,0,47.25,0,"glass",{lvl:0.5,door:9.5,up:"glass",panes:2}],
-  [0,7,6,7,"solid"],[6,0,6,11.5,"solid"],[6,11.5,6,14.4,"teak"],[0,14.75,0.4,14.75,"solid"],[0.4,14.75,2.4,14.75,"teak"],[2.4,14.75,9.25,14.75,"solid"],[9.25,14.75,11.75,14.75,"head"],[11.75,14.75,12,14.75,"solid"],[12,14.75,24.75,14.75,"solid"],
+  [0,7,6,7,"solid"],[6,0,6,11.5,"solid"],[6,11.5,6,14.4,"teak"],[0,14.75,0.4,14.75,"solid"],[0.4,14.75,2.4,14.75,"teak",{ext:true}],[2.4,14.75,9.25,14.75,"solid"],[9.25,14.75,11.75,14.75,"head"],[11.75,14.75,12,14.75,"solid"],[12,14.75,24.75,14.75,"solid"],
   [30.5,14.75,47.25,14.75,"glass",{lvl:0.5,door:9.5,up:"louvre"}],
   [12,14.75,12,17.5,"solid"],[12,21,12,24.9,"solid"],[12,24.9,12,26.4,"fw"],[12,26.4,12,29,"solid"],[12,29,12,43.75,"glass",{up:"louvre"}],[24.75,14.75,24.75,29.6,"solid"],[24.75,29.6,24.75,32.6,"teak"],[24.75,32.6,24.75,43.75,"solid"],
   [12,21,16.9,21,"solid"],[16.9,21,20,21,"teak"],[20,21,24.75,21,"solid"],[12,43.75,24.75,43.75,"solid"],
@@ -306,7 +307,7 @@ const WALLS=[
 [30.5,34.4,30.9,34.4,"solid"],[30.9,34.4,33.9,34.4,"teak"],[34,33.4,34,36.25,"solid"],
 [34,36.25,47.25,36.25,"solid"],[34,36.25,34,38.6,"solid"],[34,38.6,34,41.6,"teak"],[34,41.6,34,42,"solid"],
 [30.5,42,30.9,42,"solid"],[30.9,42,33.9,42,"teak"],[33.9,42,47.25,42,"solid"],
-  [30.5,52.5,47.25,52.5,"glass",{up:"louvre"}],[24.75,42,30.5,42,"teak"],
+  [30.5,52.5,47.25,52.5,"glass",{up:"louvre"}],[24.75,42,30.5,42,"teak",{ext:true}],
   [30.5,52.5,30.5,61.6,"brick",{h:8}],[47.25,52.5,47.25,61.3,"brick",{h:8}],[47.25,-9.3,47.25,0,"brick",{h:8}],
 ];
 
@@ -359,17 +360,18 @@ const SCHEMES={
 };
 // the roof sheet stops at the water tank slab (roof plan A-04), so split each panel around it
 const SHAFT={x0:43.3,x1:46.75,z0:36.75,z1:41.5};          // open to sky over the bedroom 01 washroom shower
-for(const sch of Object.values(SCHEMES)){
-  const r={x0:sch.tank.x0,x1:47.6,z0:36.25,z1:42}, out=[];
-  for(const p of sch.panels){
+const SKY2={x0:9.375,x1:11.625,z0:17.8,z1:21.025};         // open to sky over the master washroom planter bay (Tharinda's choice)
+function splitAround(panels,r){ const out=[];
+  for(const p of panels){
     if(p.x1<=r.x0||p.x0>=r.x1||p.z1<=r.z0||p.z0>=r.z1){ out.push(p); continue; }
     const cut=(o)=>out.push(Object.assign({},p,o));
     if(p.z0<r.z0) cut({z1:r.z0}); if(p.z1>r.z1) cut({z0:r.z1});
     const z0=Math.max(p.z0,r.z0), z1=Math.min(p.z1,r.z1);
     if(p.x0<r.x0) cut({z0,z1,x1:r.x0}); if(p.x1>r.x1) cut({z0,z1,x0:r.x1});
   }
-  sch.panels=out;
+  return out;
 }
+for(const sch of Object.values(SCHEMES)) sch.panels=splitAround(splitAround(sch.panels,{x0:sch.tank.x0,x1:47.6,z0:36.25,z1:42}),SKY2);
 function under(sch,x,z){
   for(const p of sch.panels){ if(x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1) return p.f(x)-(p.thick||0.6); }
   return null;
@@ -528,6 +530,7 @@ box(46.3,46.9,36.65,41.6,0,12.5,M.plaster,world);                               
 // master bedroom closet (A-03): walk-in dressing area, open to the bedroom at its west end;
 // a full-width wardrobe along grid E faces the closet and screens it from the bed
 box(15.45,24.4,27.8,29.4,2,9.5,M.teak,world);
+box(15.5,24.35,27.74,27.8,2.1,3.6,texMat(TX.perf,8.85*1.5,1.5*1.5),world);                   // perforated vent base, matching the doors
 for(let x=15.45+1.5;x<24.3;x+=1.5) box(x-0.03,x+0.03,27.76,27.8,2.1,9.4,M.fascia,world);   // door joints
 for(let x=15.45+0.75;x<24.3;x+=3) box(x-0.05,x+0.05,27.66,27.76,5,6.5,M.steel,world);      // pulls on each door pair
 box(12.6,15.2,21.4,21.5,3.5,9,M.glassDark,world);                                       // full-length mirror beside the washroom door
@@ -581,7 +584,7 @@ function dimLine(a,b,text,g,size=1.3){
     const open=n.startsWith("Courtyard"), w=(x1-x0)-(open?0:0.75), d=(z1-z0)-(open?0:0.75);
     const s=label((clear||ftIn(w)+" × "+ftIn(d))+"  "+lvlTxt(lv),{size:1.15,bg:"rgba(138,75,42,.9)",font:"500 36px 'JetBrains Mono', monospace"});
     s.position.set((x0+x1)/2,lv+1.6,(z0+z1)/2); dimsG.add(s); }
-  for(const [t,x,y,z] of [["Seat +1'-6\"",31.25,3.2,12.6],["Step +1'-0\"",32.6,2.6,1.6],["Dining +2'-0\"",27,3.6,12.6],["Open to sky",44.9,10,39.1],["Wardrobe",20,10.4,28.6],["Breakfast bar +5'-6\"",14.4,8.6,7]]){
+  for(const [t,x,y,z] of [["Seat +1'-6\"",31.25,3.2,12.6],["Step +1'-0\"",32.6,2.6,1.6],["Dining +2'-0\"",27,3.6,12.6],["Open to sky",44.9,10,39.1],["Open to sky",10.5,15,19.4],["Wardrobe",20,10.4,28.6],["Breakfast bar +5'-6\"",14.4,8.6,7]]){
     const s=label(t,{size:1.05,bg:"rgba(138,75,42,.9)",font:"500 36px 'JetBrains Mono', monospace"}); s.position.set(x,y,z); dimsG.add(s); }
 })();
 
@@ -605,7 +608,9 @@ function build(key){
     else if(kind==="brick") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),texMat(TX.brick,L/3,tA,{roughness:0.95}),dyn);
     else if(kind==="window"){ mesh(prism(ax,az,bx,bz,0.75,0,0,lvl+3,lvl+3),M.plaster,dyn);
       mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); }
-    else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); }
+    else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);
+      if(!o.ext){ const ux=(bx-ax)/L*0.25, uz=(bz-az)/L*0.25;   // perforated vent panel low in each inside door, the house's joinery feature
+        mesh(prism(ax+ux,az+uz,bx-ux,bz-uz,0.34,lvl+0.35,lvl+0.35,lvl+2.1,lvl+2.1),texMat(TX.perf,Math.max(1,L*1.5),1.75*1.5),dyn); } }
     else if(kind==="glass") glassWall(ax,az,bx,bz,tA,tB,lvl,o.up||"solid",L,dyn,o.panes,o.door);
     else if(kind==="nook") nook(ax,az,bz,tA,lvl,dyn);
     else if(kind==="head") mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);   // open below, wall above the opening
@@ -638,6 +643,12 @@ function build(key){
     for(let z=tk.z0-0.4;z<=tk.z1+0.4;z+=0.45) box(tk.x0-0.5,tk.x0-0.35,z,z+0.2,tk.y0,tk.y1,M.teak,roofG);
   } else tankShaft(tk,roofG);
 
+  // master washroom: high louvres above the glass to the planter bay, and a kerb + grille round its sky opening
+  { const S=SKY2, yt=under(sch,12.1,19.4); if(yt) louvres(12,17.5,12,21,9.5,yt,dyn);
+    const y0=under(sch,S.x0-0.2,19.4)+0.6, y1=under(sch,S.x1+0.2,19.4)+0.6;
+    box(S.x0-0.25,S.x0,S.z0-0.25,S.z1+0.25,y0-0.6,y0+0.5,M.plaster,roofG); box(S.x1,S.x1+0.25,S.z0-0.25,S.z1+0.25,y1-0.6,y1+0.5,M.plaster,roofG);
+    box(S.x0,S.x1,S.z0-0.25,S.z0,Math.min(y0,y1)-0.6,Math.max(y0,y1)+0.5,M.plaster,roofG); box(S.x0,S.x1,S.z1,S.z1+0.25,Math.min(y0,y1)-0.6,Math.max(y0,y1)+0.5,M.plaster,roofG);
+    for(let z=S.z0+0.4;z<S.z1;z+=0.5) box(S.x0,S.x1,z-0.04,z+0.04,Math.max(y0,y1)+0.4,Math.max(y0,y1)+0.5,M.steel,roofG); }
   if(key==="C"||key==="D") roofGarden(roofG);
   heightDim(sch);
   heightTags(sch);
