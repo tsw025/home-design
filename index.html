@@ -678,8 +678,8 @@ function glassWall(ax,az,bx,bz,tA,tB,lvl,up,L,g,panes,door=8){
   const beamTop=Math.min(head+1.5,Math.min(t0,t1));
   mesh(prism(a[0],a[1],b[0],b[1],0.85,head,head,beamTop,beamTop),M.plaster,g); // beam over the doors
   const room=Math.min(t0,t1)-beamTop;
-  if(up==="glass"&&room>1.0){ const yS=beamTop+Math.min(2.6,room-0.3);   // rectangular clerestory band on the beam, plain wall above
-    ribbon(a,b,beamTop,yS,g); mesh(prism(a[0],a[1],b[0],b[1],0.75,yS,yS,t0,t1),M.plaster,g); }
+  if(up==="glass"&&room>0.5){   // SD4/SD5 (A-07): glass from the top of the beam up to the underside of the roof, following its slope
+    const W=L-2*P; glazing(a[0],a[1],b[0],b[1],beamTop,beamTop,t0,t1,g,W/(panes||4),0,true); }
   else if(up==="louvre"&&room>0.3){ const lt=beamTop+Math.min(1.5,room); louvres(a[0],a[1],b[0],b[1],beamTop,lt,g);
     mesh(prism(a[0],a[1],b[0],b[1],0.75,lt,lt,t0,t1),M.plaster,g); }
   else mesh(prism(a[0],a[1],b[0],b[1],0.75,beamTop,beamTop,t0,t1),M.plaster,g);
