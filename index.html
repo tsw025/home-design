@@ -116,7 +116,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
         <li>With the doors open, cool air comes in low through the doors facing the paddy fields and the three courtyards. Turn on <b>Air flow</b> to see the paths.</li>
         <li>With the house locked, air still moves. It comes in through louvres high in the utility's outside wall, under the eave, then through louvres up to the ceiling into the kitchen. Each inside door, and the main door, has perforated panels at the top and bottom, and the main door has insect mesh behind its holes. Turn on <b>House closed up</b> to see these paths.</li>
         <li>The paddy side has no louvres. Warm air leaves through louvres that stay open on the courtyard sides: above the living room's doors to courtyard 02, and in a band above the reading nook roof, under a small hood.</li>
-        <li>Glass louvres above the courtyard doors work for the bedrooms and the study. The master washroom has its own open-to-sky planter, and the bedroom 01 shower has the shaft beside the tank.</li>
+        <li>Glass louvres above the courtyard doors work for the bedrooms and the study. The master bedroom breathes through the louvres over its glass wall to the front garden, and out through its door panels to the corridor. The master washroom pulls air through its door panel and out of the open-to-sky planter, the bedroom 01 washroom out of the shaft beside the tank, and the back washroom through a louvred fan light over its door.</li>
         <li>There are no openings in the blind wall. Building rules usually don't allow them on a boundary wall, so check this with your architect.</li>
       </ul>
     </section>
@@ -303,7 +303,7 @@ const ROOMS=[
 let SLIDES=2; try{ SLIDES=+localStorage.getItem("roofStudy.slides")||2; }catch(e){}
 const WALLS=[
   // glass walls: piers at both ends, doors below an 18" beam, then up = what fills the wall above the beam
-  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5,ext:true}],[0,3.4,0,8,"solid"],[0,8,0,14,"hv",{y0:6.3,y1:7.8}],[0,14,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
+  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5,ext:true,fan:true}],[0,3.4,0,8,"solid"],[0,8,0,14,"hv",{y0:6.3,y1:7.8}],[0,14,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
   [0,0,6,0,"solid"],[6,0,15.25,0,"window",{south:true}],[15.25,0,30.5,0,"glass",{up:"glass",panes:"S"}],[30.5,0,47.25,0,"glass",{lvl:0.5,door:9.5,up:"glass",panes:"S"}],
   [0,7,6,7,"solid"],[6,0,6,7.3,"solid"],[6,7.3,6,11.5,"hv",{y0:7.6}],[6,11.5,6,14.4,"teak"],[0,14.75,0.4,14.75,"solid"],[0.4,14.75,2.4,14.75,"teak",{ext:true}],[2.4,14.75,9.25,14.75,"solid"],[9.25,14.75,11.75,14.75,"head"],[11.75,14.75,12,14.75,"solid"],[12,14.75,24.75,14.75,"solid"],
   [30.5,14.75,47.25,14.75,"glass",{lvl:0.5,door:9.5,up:"louvre"}],
@@ -602,7 +602,9 @@ function build(key){
       const y0=lvl+o.y0, y1=o.y1!=null?lvl+o.y1:Math.min(tA,tB)-0.15;
       mesh(prism(ax,az,bx,bz,0.75,0,0,y0,y0),M.plaster,dyn); louvres(ax,az,bx,bz,y0,y1,dyn);
       if(Math.min(tA,tB)>y1+0.05) mesh(prism(ax,az,bx,bz,0.75,y1,y1,tA,tB),M.plaster,dyn); }
-    else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);
+    else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn);
+      if(o.fan){ const ft=Math.min(lvl+9.3,Math.min(tA,tB)-0.3); louvres(ax,az,bx,bz,lvl+8,ft,dyn); mesh(prism(ax,az,bx,bz,0.75,ft,ft,tA,tB),M.plaster,dyn); }   // louvred fan light, under the eave
+      else mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);
       if(!o.ext){ const ux=(bx-ax)/L*0.25, uz=(bz-az)/L*0.25;   // perforated vent panels at the top and bottom of each inside door and the main door, the house's joinery feature
         for(const y of [lvl+0.35,lvl+5.9]){ mesh(prism(ax+ux,az+uz,bx-ux,bz-uz,0.34,y,y,y+1.75,y+1.75),texMat(TX.perf,Math.max(1,L*1.5),1.75*1.5),dyn);
           if(o.main){ const s=o.main*0.19, nx=-(bz-az)/L*s, nz=(bx-ax)/L*s, m=M.mesh.clone(); m.map=texRep(M.mesh.map,L/0.08,1.75/0.08);   // fine insect mesh on the inside face
@@ -756,7 +758,11 @@ function airflow(sch){
     [V(-7,9,11),V(0,9,11),V(3,9.6,10),V(6,10.5,9.5),V(10,9,8),V(20,8,7),V(29,8,8),V(36,10,11),V(37,12.2,14.75),V(37,16,18.5)], // utility louvres → kitchen, dining, living → louvres to courtyard 02
     [V(27.6,3,52),V(27.6,2.9,42),V(27.6,4.5,36),V(28,8.5,28),V(29.6,12.5,20),V(30.5,13.2,20),V(33,13.6,20),V(36,16,20)], // main door panels → corridor → nook louvres
     [V(40,14,60),V(40,12.4,52.5),V(37,9.5,47),V(32.4,8.8,42),V(31.5,9.6,38),V(29.3,11.5,28),V(30.5,13.2,22.5),V(34,14.5,22.5)], // courtyard 01 louvres → bedroom 01 door top → corridor → nook
-    [V(28,3.5,5),V(34,2.5,5),V(40,4,7),V(43,9,11),V(43,12.2,14.75),V(43,16,18.5)],                                       // living: air rises to the louvres over its courtyard 02 doors
+    [V(28,3.5,5),V(34,2.5,5),V(40,4,7),V(43,9,11),V(43,12.2,14.75),V(43,16,18.5)],
+    [V(4,12,36),V(12,12.2,36),V(17,9,34),V(22,8.8,31.1),V(24.75,8.8,31.1),V(27.5,10,27),V(29.6,12.5,21),V(30.5,13.2,21),V(34,14.5,21)], // master bedroom: louvres over its glass wall → door top panel → corridor → nook
+    [V(18.5,3,24),V(18.5,2.5,21),V(15.5,5,19.4),V(12,10.2,19.4),V(10.5,12.5,19.4),V(10.5,18,19.4)],                    // master washroom: door bottom panel → louvres → sky opening
+    [V(31.5,3,40),V(34,2.4,40),V(39,4,39),V(44.9,8,39),V(44.9,14,39),V(44.9,22,39)],                                  // bedroom 01 washroom: door bottom panel → shaft by the tank
+    [V(-7,10.2,2),V(0,10.2,2),V(2.5,9,3.5),V(3.5,5,3.5),V(3,2.5,5.5)],                                                  // back washroom: louvred fan light over its door                                       // living: air rises to the louvres over its courtyard 02 doors
   ]:[
     vented?[V(20,4,-30),V(20,5,-2),V(22,7,8),V(27,12,10),V(30.5,15.4,10),V(36,18.5,10),V(43,20,10)]
           :[V(20,4,-30),V(20,5,-2),V(21,6,8),V(27.5,7,18),V(34,9,20),V(37,22,20)],
