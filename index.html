@@ -99,7 +99,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
   <aside class="panel">
     <header>
       <div class="eyebrow">CK/181 · Concept study, not for construction</div>
-      <h1>Four roofs for one plan</h1>
+      <h1>Two roofs for one plan</h1>
       <p class="lede">Same rooms, same ground floor plan. Only the roof changes, so you can see what happens to the tall blind wall on grid 06 and to bedroom 01.</p>
     </header>
 
@@ -115,7 +115,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       <ul class="good">
         <li>Cool air comes in low, through the doors facing the paddy fields and the three courtyards. Turn on <b>Air flow</b> to see the paths.</li>
         <li>Glass louvres above the courtyard doors keep air moving when the doors are shut or locked. The drawings' key already lists Breezway-type louvres.</li>
-        <li>Warm air rises and leaves through high openings: the open courtyards in every option, plus the vented band at grid 05 in options B and C.</li>
+        <li>Warm air rises and leaves through high openings: the open courtyards in every option, plus the vented band at grid 05 facing the roof deck in option D.</li>
         <li>In that band, long, slim windows alternate with vertical slot vents. One concrete fin above them keeps the rain off.</li>
         <li>There are no openings in the blind wall. Building rules usually don't allow them on a boundary wall, so check this with your architect.</li>
       </ul>
@@ -154,7 +154,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
     <footer class="note">
       <p>Dimensions come from drawings CK/181/A-02 to A-06, with door sizes from A-07/A-08 and the living room and bay window from details A and B (A-13, A-14). Heights are in feet and inches above the parking level (±0'-0"). Bedroom floors are at +2'-0". The living room is a sunken lounge at +0'-6", with a built-in stepped seat down from the dining room. Beside the water tank, a shaft open to the sky lights and ventilates the bedroom 01 washroom shower.</p>
       <p>North comes from the plan's north arrow: the road is to the north and the paddy fields are to the south, behind the back garden. The blind wall on grid 06 faces west. The sun position is for Pannipitiya (about 6.85°N).</p>
-      <p>Doors, windows and furniture are simplified. Options B and C are ideas to discuss with your architect and structural engineer.</p>
+      <p>Doors, windows and furniture are simplified. Option D is an idea to discuss with your architect and structural engineer.</p>
     </footer>
   </aside>
 </div>
@@ -313,8 +313,7 @@ const WALLS=[
 
 /* ---------- roof schemes ---------- */
 const fA=x=>11+7.2*(x+3.4)/50.65;            // as drawn: 18'-2" at grid 06, ~11' at west eave (section S1)
-const fM=x=>11+6.5*(x+3.4)/34.4;             // options B/C main roof, high edge at grid 05
-const fE=x=>14-2.1*(x-30.5)/17.25;           // option B east-wing roof, falls to boundary
+const fE=x=>14-2.1*(x-30.5)/17.25;           // box-gutter height (only used if a scheme has a box gutter)
 const SLAB=12.5;
 
 const SCHEMES={
@@ -327,26 +326,7 @@ const SCHEMES={
     desc:"The architect's roof is one skillion of Colourbond sheet. It is about 11 ft high at the front garden side (grid 01) and rises to 18'-2\" at the blind wall on grid 06. The living room, study and bedroom 01 all sit under the tall end.",
     good:["Simple to build: one roof plane and one gutter.","High, airy ceilings let hot air rise away from people.","Rain drains away from the neighbour's side."],
     watch:["An 18'-2\" blank plaster wall runs the full length of the grid 06 boundary.","Bedroom 01's ceiling is 13 to 15 ft high: tall for a bedroom and harder to cool with AC.","That wall faces west, so it takes the hot afternoon sun and passes the heat into the bedrooms."]},
-  B:{ key:"B", name:"Split roof and vented band", tag:"Two sloping roofs with a band of small windows and vents between them", over:"Sheet, falls to grid 06",
-    panels:[
-      {x0:30.5,x1:47.25,z0:-3.3,z1:14.75,f:fE},{x0:30.5,x1:47.25,z0:25.5,z1:56,f:fE},
-      {x0:-3.4,x1:31,z0:-3.3,z1:18.2,f:fM},{x0:8.5,x1:31,z0:18.2,z1:43.6,f:fM},{x0:6.4,x1:31,z0:43.6,z1:56,f:fM}],
-    east:[[0,52.5,fE(47.25)+0.6]],
-    cler:[[0,14.75,fE(30.5)],[25.5,52.5,fE(30.5)]], tank:{x0:41,x1:47.25,z0:36.5,z1:41.75,y0:11.5,y1:17},
-    desc:"The kitchen, dining and master bedroom keep a skillion like the architect's. The wing along grid 06 (living room, study, bedroom 01) gets its own lower roof that falls toward the blind wall. Where the two roofs meet above grid 05, a band of wall with long, slim windows and slot vents lets daylight in and warm air out. One concrete fin above them keeps the rain off.",
-    good:["The blind wall drops to about 12'-6\".","Bedroom 01's ceiling is 9'-5\" to 11'-4\", a normal room height.","Daylight from high up reaches the corridor, dining room and kitchen, and hot air escapes at the highest point of the house.","It's still a light sheet roof, so the cost stays close to the original."],
-    watch:["Rain from the lower roof drains at the boundary, so it needs a large box gutter behind the parapet, running to one outlet at the back. Size it generously and give it an overflow.","The step between the two roofs needs careful flashing for monsoon rain.","The water tank box above the washroom stands out more. We should find it a better spot."]},
-  C:{ key:"C", name:"Roof garden", tag:"Option B, plus a deck over the living room facing the paddy fields", over:"Sheet, falls to grid 06",
-    panels:[
-      {x0:30.5,x1:47.25,z0:-3.3,z1:14.75,f:()=>SLAB,thick:0.75,slab:true},
-      {x0:30.5,x1:47.25,z0:25.5,z1:56,f:fE},
-      {x0:-3.4,x1:31,z0:-3.3,z1:18.2,f:fM},{x0:8.5,x1:31,z0:18.2,z1:43.6,f:fM},{x0:6.4,x1:31,z0:43.6,z1:56,f:fM}],
-    east:[[-3.3,14.75,SLAB+1],[14.75,52.5,fE(47.25)+0.6]],
-    cler:[[0,14.75,SLAB],[25.5,52.5,fE(30.5)]], tank:{x0:41,x1:47.25,z0:36.5,z1:41.75,y0:11.5,y1:17},
-    desc:"This follows the rooftop garden idea from Gibbon Street. The bedroom wing gets the low roof from option B. The living room gets a concrete slab at about 12'-6\" with a planted deck on top, looking south over the back garden to the paddy fields. A spiral stair in courtyard 02 leads up to it. Above the dining room, the vented band facing the deck is taller here, so it lets in more light and air.",
-    good:["Bedroom 01 and the study get the same low roof and 12'-6\" blind wall as option B.","An outdoor room above the back garden, with the paddy field view.","Soil and plants on the slab keep the living room below cooler.","The living room ceiling is a comfortable 11'-3\"."],
-    watch:["A slab costs more than a sheet roof. It must be waterproofed and laid to falls, because leaks are the main risk in Sri Lankan rain.","The structural engineer has to size the slab for wet soil, planters and people.","The living room loses the very tall ceiling it has in the architect's design.","The stair and railings add to the budget."]},
-  D:{ key:"D", name:"A roof with roof garden", tag:"The architect's roof, plus the deck from C over the living room", over:"Sheet, falls to grid 01",
+  D:{ key:"D", name:"A roof with roof garden", tag:"The architect's roof, plus a planted roof deck over the living room", over:"Sheet, falls to grid 01",
     panels:[
       {x0:30.5,x1:47.25,z0:-3.3,z1:14.75,f:()=>SLAB,thick:0.75,slab:true},
       {x0:30.5,x1:47.55,z0:25.5,z1:43.6,f:fA},
@@ -354,7 +334,7 @@ const SCHEMES={
       {x0:8.5,x1:30.5,z0:18.2,z1:43.6,f:fA},{x0:6.4,x1:47.55,z0:43.6,z1:56,f:fA}],
     east:[[-3.3,52.5,fA(47.25)]],
     cler:[[0,14.75,SLAB]], tank:{x0:34,x1:47.25,z0:36.25,z1:42,y0:12.5,y1:19.5},
-    desc:"This is your brother's suggestion. The house keeps the architect's single sloping roof, so all roof water runs to the front garden side and there is no box gutter to maintain. Only the living room changes: it gets the concrete slab and planted deck from option C, looking out to the paddy fields. The blind wall stays at option A's 18'-2\" all the way along, so beside the deck it becomes a 5'-8\" privacy wall lined with planters.",
+    desc:"This is your brother's suggestion. The house keeps the architect's single sloping roof, so all roof water runs to the front garden side and there is no box gutter to maintain. Only the living room changes: it gets a concrete slab with a planted deck on top, looking out to the paddy fields. The blind wall stays at option A's 18'-2\" all the way along, so beside the deck it becomes a 5'-8\" privacy wall lined with planters.",
     good:["No box gutter: all roof water drains away from the boundary, so there's less maintenance and fewer places to leak.","The deck gets a private, sheltered garden wall on the neighbour's side.","One continuous roof line as the architect designed it, so it's the smallest change to the drawings.","The dining room gets the band of slim windows and vents facing the deck."],
     watch:["The 18'-2\" blind wall stays, so the west sun still heats it.","Bedroom 01 keeps its 13 to 15 ft sloping ceiling. A flat ceiling at about 10 ft, with a ventilated space above, would make it cosier and easier to cool.","The slab still needs waterproofing, laid to fall toward courtyard 03.","The living room gets an 11'-3\" ceiling instead of the very tall one in option A."]},
 };
@@ -771,14 +751,10 @@ function airflow(sch){
 // spout: [x, z, dx, dz, ground level below, source]   source: "west" main roof eave, "east" box gutter, "slab" roof deck scupper
 const DRAIN={
   A:{f:fA, box:[], spouts:[[8.5,31,-1,0,1.5,"west"]]},
-  B:{f:fM, box:[[-3.3,56,fE(46.6)]], spouts:[[46.2,-3.3,0,-1,0,"east"]]},
-  C:{f:fM, box:[[14.75,56,fE(46.6)]], spouts:[[46.2,-3.3,0,-1,0,"slab"]]},
   D:{f:fA, box:[], spouts:[[8.5,31,-1,0,1.5,"west"],[45.6,-3.3,0,-1,0,"slab"]]},
 };
 const RAINTXT={
   A:"The roof drains to eave gutters on the front garden side. Downpipes and one feature spout feed an underground pipe that runs down the west side, with the slope, to the canal behind the back fence. Each courtyard has a channel drain piped to the same canal.",
-  B:"The main roof drains as in option A. The lower roof's box gutter runs the full length of the blind wall, falling toward the back, and empties through one feature spout into a drained sump in courtyard 03. Nothing pours into courtyards 01 or 02. The courtyard channel drains and the sump are piped downhill to the canal.",
-  C:"As option B. The roof deck falls toward courtyard 03 and drains through the same spout. Its share of the box gutter runs inside the planter along the blind wall.",
   D:"The main roof drains exactly as in option A: to the front garden side, then down the west pipe run to the canal. The deck falls toward courtyard 03 and empties through one spout into a drained sump there.",
 };
 // underground drain runs (all options), drawn at y=0.25 when it rains; they fall with the land toward the canal
