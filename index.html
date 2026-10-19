@@ -595,9 +595,9 @@ function build(key){
     if(kind==="solid") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),M.plaster,dyn);
     else if(kind==="brick") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),texMat(TX.brick,L/3,tA,{roughness:0.95}),dyn);
     else if(kind==="window"){ mesh(prism(ax,az,bx,bz,0.75,0,0,lvl+3,lvl+3),M.plaster,dyn);
-      if(o.south){   // kitchen: sliding window over the sink, then the same beam, vent louvres and high glass as the doors beside it
-        glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,L/SLIDES); const bt=lvl+9.5;
-        mesh(prism(ax,az,bx,bz,0.85,lvl+8,lvl+8,bt,bt),M.plaster,dyn); highGlass([ax,az],[bx,bz],bt,tA,tB,dyn,SLIDES,L); }
+      if(o.south){   // kitchen: sliding window over the sink, then a band of vent louvres; plain wall above (no high glass)
+        glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,L/SLIDES); const bt=lvl+8.15, lt=Math.min(bt+1.2,Math.min(tA,tB)-0.4);   // the roof is low here, so the louvres sit right on the window head
+        mesh(prism(ax,az,bx,bz,0.85,lvl+8,lvl+8,bt,bt),M.plaster,dyn); louvres(ax,az,bx,bz,bt,lt,dyn); mesh(prism(ax,az,bx,bz,0.75,lt,lt,tA,tB),M.plaster,dyn); }
       else { mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); } }
     else if(kind==="hv"){   // wall with a band of high glass louvres: o.y0..o.y1 above the floor (y1 omitted = up to the ceiling)
       const y0=lvl+o.y0, y1=o.y1!=null?lvl+o.y1:Math.min(tA,tB)-0.15;
