@@ -121,6 +121,17 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       </ul>
     </section>
 
+    <section class="lists">
+      <h2>Off-grid solar (rough sizing)</h2>
+      <ul class="good">
+        <li>Daily use is about 38 kWh. Air conditioning is about 23 kWh: 12,000 BTU inverter units in the master bedroom and bedroom 01 for 8 hours a night, the study for 6 hours, and a 24,000 BTU unit for the living and dining room for 6 hours. The electric car is about 7 kWh for 40 km a day. Everything else (fridge, lights, fans, pump, cooking, laundry) is about 8 kWh.</li>
+        <li>Panels: about 15 kWp, for example 26 panels of 580 W, covering about 730 sq ft of roof. Turn on <b>Off-grid solar</b> to see them. The roof is a low slope, which works well this close to the equator.</li>
+        <li>Battery: about 30 kWh of lithium (LFP), enough for the bedroom air conditioners overnight. Charge the car in the daytime straight from the panels.</li>
+        <li>Inverter: a 10 to 12 kW hybrid unit, with the car charger limited to about 3.7 kW, so the air conditioners and the car can run together.</li>
+        <li>In long monsoon spells the panels can make less than half of this. Keep a grid connection or a small generator as backup. Fully off-grid with no backup would need about 25 kWp and 50 kWh.</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Views</h2>
       <div class="btns" id="views"></div>
@@ -131,6 +142,11 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       <div class="btns" id="slides"><button class="btn" data-n="2" aria-pressed="false">2 panels</button><button class="btn" data-n="3" aria-pressed="false">3 panels</button><button class="btn" data-n="4" aria-pressed="false">4 panels</button></div>
     </section>
 
+    <section>
+      <h2>Curtains</h2>
+      <div class="btns" id="curtains"><button class="btn" data-c="none" aria-pressed="false">None</button><button class="btn" data-c="open" aria-pressed="false">Open</button><button class="btn" data-c="closed" aria-pressed="false">Closed</button></div>
+    </section>
+
     <section class="toggles">
       <h2>Show</h2>
       <label><input type="checkbox" id="tRoof" checked> Roof</label>
@@ -138,6 +154,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       <label><input type="checkbox" id="tClosed"> House closed up (air through vents only)</label>
       <label><input type="checkbox" id="tRain"> Heavy rain</label>
       <label><input type="checkbox" id="tNight"> Night, with lights on</label>
+      <label><input type="checkbox" id="tSolar"> Off-grid solar (15 kWp, 30 kWh battery)</label>
       <label><input type="checkbox" id="tDims"> Dimensions</label>
       <label><input type="checkbox" id="tLabels"> Room names and grid lines</label>
       <label><input type="checkbox" id="tCut"> Section cut</label>
@@ -648,11 +665,30 @@ function build(key){
     box(S.x0,S.x1,S.z0-0.25,S.z0,Math.min(y0,y1)-0.6,Math.max(y0,y1)+0.5,M.plaster,roofG); box(S.x0,S.x1,S.z1,S.z1+0.25,Math.min(y0,y1)-0.6,Math.max(y0,y1)+0.5,M.plaster,roofG);
     for(let z=S.z0+0.4;z<S.z1;z+=0.5) box(S.x0,S.x1,z-0.04,z+0.04,Math.max(y0,y1)+0.4,Math.max(y0,y1)+0.5,M.steel,roofG); }
   if(key==="C"||key==="D") roofGarden(roofG);
+  solar(sch,roofG);
   heightDim(sch);
   heightTags(sch);
   return sch;
 }
 
+/* off-grid solar: 26 x 580 W panels (~15 kWp), 1.13 x 2.28 m, laid on rails following the roof slope,
+   clear of the tank, the sky openings and the roof deck; battery + inverter cabinet in the utility */
+const TX_PV=canvasTex(64,128,(g,w,h)=>{ g.fillStyle="#1B2738"; g.fillRect(0,0,w,h); g.strokeStyle="#5F7390"; g.lineWidth=1.5;
+  for(let x=0;x<=w;x+=w/4){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); } for(let y=0;y<=h;y+=h/8){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
+  g.strokeStyle="#B9C2CC"; g.lineWidth=3; g.strokeRect(1,1,w-2,h-2); });
+const M_PV=new THREE.MeshStandardMaterial({map:TX_PV,roughness:0.25,metalness:0.4}); M.pv=M_PV; TX.pv=TX_PV;   // shared, so rebuilds never dispose them
+function solar(sch,g){
+  const sg=new THREE.Group(); sg.name="solar"; sg.visible=$("#tSolar")?$("#tSolar").checked:false; g.add(sg);
+  const PL=7.45, PW=3.68, spots=[];
+  for(const x of [0.4,8.0,15.6,23.2]) for(const z of [-2.4,1.35,5.1,8.85]) spots.push([x,z]);   // front roof over kitchen, dining
+  for(const x of [9.2,16.8]) for(const z of [21.6,25.35,29.1,32.85,36.6]) spots.push([x,z]);     // bedroom wing
+  for(const [x,z] of spots){ const top=xx=>(under(sch,xx,z+PW/2)??0)+0.6+0.3;
+    mesh(prism(x,z+PW/2,x+PL,z+PW/2,PW,top(x),top(x+PL),top(x)+0.12,top(x+PL)+0.12),M_PV,sg);
+    for(const zr of [z+0.6,z+PW-0.6]) mesh(prism(x+0.2,zr,x+PL-0.2,zr,0.12,top(x)-0.3,top(x+PL)-0.3,top(x),top(x+PL)),M.steel,sg); }
+  const bat=new THREE.Group(); bat.name="solarbat"; bat.visible=sg.visible; dyn.add(bat);
+  box(0.4,1.4,8.6,12.4,2,6.6,new THREE.MeshStandardMaterial({color:"#D9DCDD",roughness:0.5,metalness:0.2}),bat);       // battery stack + inverter
+  box(1.4,1.45,9.2,9.6,5.6,5.8,new THREE.MeshBasicMaterial({color:"#3BD16F"}),bat);
+}
 // water tank enclosure on its slab, and the shaft open to the sky beside it (A-04, S2)
 function tankShaft(tk,g){
   const S=SHAFT, w=0.5;
@@ -969,6 +1005,29 @@ const VIEWS={
   section:{name:"Section",pos:[22,10,108],tgt:[22,8,47],cut:true},
   top:{name:"Plan",pos:[20,150,26.5],tgt:[20,0,26],noRoof:true,labels:true},
 };
+/* curtains: linen, floor to just under the door beam, in the living room and both bedrooms */
+const curtG=new THREE.Group(); scene.add(curtG);
+const M_CURT=new THREE.MeshStandardMaterial({color:"#EAE2D3",roughness:1,side:THREE.DoubleSide,transparent:true,opacity:0.93}); M.curt=M_CURT;
+const M_CURT2=M_CURT.clone(); M_CURT2.color.set("#CFC5B3"); M.curt2=M_CURT2;   // shaded side of each fold
+let CURT="none"; try{ CURT=localStorage.getItem("roofStudy.curtains")||"none"; }catch(e){}
+function curtainRun(a0,a1,c,y0,y1,alongX,mode){   // a0..a1 along the glass, c = offset line inside the room
+  const L=a1-a0, stack=Math.min(2.2,L*0.15), segs=mode==="closed"?[[a0,a1]]:[[a0,a0+stack],[a1-stack,a1]];
+  const at=(u,o)=>alongX?[u,c+o]:[c+o,u];
+  for(const [s0,s1] of segs){ const pitch=mode==="closed"?0.45:0.22;
+    for(let u=s0;u<s1-0.01;u+=pitch){ const o=((Math.round((u-s0)/pitch))%2?0.12:-0.12), p=at(u,o), q=at(Math.min(s1,u+pitch),-o);
+      mesh(prism(p[0],p[1],q[0],q[1],0.04,y0,y0,y1,y1),o>0?M_CURT:M_CURT2,curtG,false); } }
+  const r0=at(a0,0), r1=at(a1,0); mesh(prism(r0[0],r0[1],r1[0],r1[1],0.08,y1,y1,y1+0.1,y1+0.1),M.steel,curtG,false);   // rail
+}
+function applyCurtains(){
+  disposeGroup(curtG); while(curtG.children.length) curtG.remove(curtG.children[0]);
+  document.querySelectorAll("#curtains .btn").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===CURT)));
+  if(CURT==="none") return;
+  curtainRun(31.9,45.9,0.75,0.55,9.85,true,CURT);     // living room, inside the paddy-side slides
+  curtainRun(30.4,42.4,12.75,2.05,9.85,false,CURT);   // master bedroom, along its glass wall to the front garden
+  curtainRun(31.9,45.9,51.8,2.05,9.85,true,CURT);     // bedroom 01, inside the slides to courtyard 01
+}
+document.querySelectorAll("#curtains .btn").forEach(b=>b.addEventListener("click",()=>{ CURT=b.dataset.c; try{ localStorage.setItem("roofStudy.curtains",CURT); }catch(e){} applyCurtains(); }));
+applyCurtains();
 function applySlides(){ document.querySelectorAll("#slides .btn").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.n===SLIDES))); }
 document.querySelectorAll("#slides .btn").forEach(b=>b.addEventListener("click",()=>{ SLIDES=+b.dataset.n; try{ localStorage.setItem("roofStudy.slides",SLIDES); }catch(e){} applySlides(); setScheme(current); }));
 applySlides();
@@ -996,6 +1055,7 @@ $("#tLabels").addEventListener("change",applyLabels);
 $("#tDims").addEventListener("change",()=>{ const on=$("#tDims").checked; dimsG.visible=on; const h=dyn&&dyn.getObjectByName("hdims"); if(h) h.visible=on; });
 $("#tRain").addEventListener("change",()=>{ rainOn=$("#tRain").checked; rain.visible=rainOn; const f=dyn&&dyn.getObjectByName("rainfx"); if(f) f.visible=rainOn; applySun(); });
 $("#tNight").addEventListener("change",()=>applyNight($("#tNight").checked));
+$("#tSolar").addEventListener("change",()=>{ for(const n of ["solar","solarbat"]){ const o=dyn&&dyn.getObjectByName(n); if(o) o.visible=$("#tSolar").checked; } });
 $("#tAir").addEventListener("change",()=>{ const a=dyn&&dyn.getObjectByName("air"); if(a) a.visible=$("#tAir").checked; });
 $("#tCut").addEventListener("change",applyCut);
 $("#cutZ").addEventListener("input",()=>{ $("#tCut").checked=true; applyCut(); });
