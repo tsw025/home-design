@@ -113,10 +113,10 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
     <section class="lists">
       <h2>Natural ventilation</h2>
       <ul class="good">
-        <li>Cool air comes in low, through the doors facing the paddy fields and the three courtyards. Turn on <b>Air flow</b> to see the paths.</li>
-        <li>Glass louvres above the courtyard doors keep air moving when the doors are shut or locked. The drawings' key already lists Breezway-type louvres.</li>
-        <li>Warm air rises and leaves through high openings: the open courtyards in every option, plus the vented band at grid 05 facing the roof deck in option D.</li>
-        <li>In that band, long, slim windows alternate with vertical slot vents. One concrete fin above them keeps the rain off.</li>
+        <li>With the doors open, cool air comes in low through the doors facing the paddy fields and the three courtyards. Turn on <b>Air flow</b> to see the paths.</li>
+        <li>With the house locked, air still moves. It comes in through louvres high in the utility's outside wall, under the eave, then through louvres up to the ceiling into the kitchen. Each inside door, and the main door, has perforated panels at the top and bottom, and the main door has insect mesh behind its holes. Turn on <b>House closed up</b> to see these paths.</li>
+        <li>Warm air rises and leaves through louvres that stay open: a band on the beam above the kitchen window and both sliding doors, sheltered by the roof overhang, and a band above the reading nook roof, under a small hood.</li>
+        <li>Glass louvres above the courtyard doors work for the bedrooms and the study. The master washroom has its own open-to-sky planter, and the bedroom 01 shower has the shaft beside the tank.</li>
         <li>There are no openings in the blind wall. Building rules usually don't allow them on a boundary wall, so check this with your architect.</li>
       </ul>
     </section>
@@ -126,10 +126,16 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       <div class="btns" id="views"></div>
     </section>
 
+    <section>
+      <h2>Slides on the paddy side</h2>
+      <div class="btns" id="slides"><button class="btn" data-n="2" aria-pressed="false">2 panels</button><button class="btn" data-n="3" aria-pressed="false">3 panels</button><button class="btn" data-n="4" aria-pressed="false">4 panels</button></div>
+    </section>
+
     <section class="toggles">
       <h2>Show</h2>
       <label><input type="checkbox" id="tRoof" checked> Roof</label>
       <label><input type="checkbox" id="tAir"> Air flow</label>
+      <label><input type="checkbox" id="tClosed"> House closed up (air through vents only)</label>
       <label><input type="checkbox" id="tRain"> Heavy rain</label>
       <label><input type="checkbox" id="tNight"> Night, with lights on</label>
       <label><input type="checkbox" id="tDims"> Dimensions</label>
@@ -293,11 +299,13 @@ const ROOMS=[
 ];
 
 // Walls: [ax,az,bx,bz, kind, opts]. Heights come from the roof above unless h is given.
+// paddy-side slides: 2, 3 or 4 panels, shared by the kitchen window, both sliding doors and the high glass above them
+let SLIDES=2; try{ SLIDES=+localStorage.getItem("roofStudy.slides")||2; }catch(e){}
 const WALLS=[
   // glass walls: piers at both ends, doors below an 18" beam, then up = what fills the wall above the beam
-  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5,ext:true}],[0,3.4,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
-  [0,0,6,0,"solid"],[6,0,15.25,0,"window"],[15.25,0,30.5,0,"glass",{up:"glass",panes:2}],[30.5,0,47.25,0,"glass",{lvl:0.5,door:9.5,up:"glass",panes:2}],
-  [0,7,6,7,"solid"],[6,0,6,11.5,"solid"],[6,11.5,6,14.4,"teak"],[0,14.75,0.4,14.75,"solid"],[0.4,14.75,2.4,14.75,"teak",{ext:true}],[2.4,14.75,9.25,14.75,"solid"],[9.25,14.75,11.75,14.75,"head"],[11.75,14.75,12,14.75,"solid"],[12,14.75,24.75,14.75,"solid"],
+  [0,0,0,0.5,"solid"],[0,0.5,0,3.4,"teak",{lvl:1.5,ext:true}],[0,3.4,0,8,"solid"],[0,8,0,14,"hv",{y0:6.3,y1:7.8}],[0,14,0,14.75,"solid"],   // back washroom door D2 with fan light (A-03)
+  [0,0,6,0,"solid"],[6,0,15.25,0,"window",{south:true}],[15.25,0,30.5,0,"glass",{up:"glass",panes:"S"}],[30.5,0,47.25,0,"glass",{lvl:0.5,door:9.5,up:"glass",panes:"S"}],
+  [0,7,6,7,"solid"],[6,0,6,7.3,"solid"],[6,7.3,6,11.5,"hv",{y0:7.6}],[6,11.5,6,14.4,"teak"],[0,14.75,0.4,14.75,"solid"],[0.4,14.75,2.4,14.75,"teak",{ext:true}],[2.4,14.75,9.25,14.75,"solid"],[9.25,14.75,11.75,14.75,"head"],[11.75,14.75,12,14.75,"solid"],[12,14.75,24.75,14.75,"solid"],
   [30.5,14.75,47.25,14.75,"glass",{lvl:0.5,door:9.5,up:"louvre"}],
   [12,14.75,12,17.5,"solid"],[12,21,12,24.9,"solid"],[12,24.9,12,26.4,"fw"],[12,26.4,12,29,"solid"],[12,29,12,43.75,"glass",{up:"louvre"}],[24.75,14.75,24.75,29.6,"solid"],[24.75,29.6,24.75,32.6,"teak"],[24.75,32.6,24.75,43.75,"solid"],
   [12,21,16.9,21,"solid"],[16.9,21,20,21,"teak"],[20,21,24.75,21,"solid"],[12,43.75,24.75,43.75,"solid"],
@@ -333,9 +341,9 @@ const SCHEMES={
       {x0:-3.4,x1:31,z0:-3.3,z1:14.75,f:fA},{x0:-3.4,x1:30.5,z0:14.75,z1:18.2,f:fA},
       {x0:8.5,x1:30.5,z0:18.2,z1:43.6,f:fA},{x0:6.4,x1:47.55,z0:43.6,z1:56,f:fA}],
     east:[[-3.3,52.5,fA(47.25)]],
-    cler:[[0,14.75,SLAB]], tank:{x0:34,x1:47.25,z0:36.25,z1:42,y0:12.5,y1:19.5},
+    cler:[[0,14.75,SLAB,true]], tank:{x0:34,x1:47.25,z0:36.25,z1:42,y0:12.5,y1:19.5},
     desc:"This is your brother's suggestion. The house keeps the architect's single sloping roof, so all roof water runs to the front garden side and there is no box gutter to maintain. Only the living room changes: it gets a concrete slab with a planted deck on top, looking out to the paddy fields. The blind wall stays at option A's 18'-2\" all the way along, so beside the deck it becomes a 5'-8\" privacy wall lined with planters.",
-    good:["No box gutter: all roof water drains away from the boundary, so there's less maintenance and fewer places to leak.","The deck gets a private, sheltered garden wall on the neighbour's side.","One continuous roof line as the architect designed it, so it's the smallest change to the drawings.","The dining room gets the band of slim windows and vents facing the deck."],
+    good:["No box gutter: all roof water drains away from the boundary, so there's less maintenance and fewer places to leak.","The deck gets a private, sheltered garden wall on the neighbour's side.","One continuous roof line as the architect designed it, so it's the smallest change to the drawings.","The deck is screened from the dining room by a plain wall, so it stays private."],
     watch:["The 18'-2\" blind wall stays, so the west sun still heats it.","Bedroom 01 keeps its 13 to 15 ft sloping ceiling. A flat ceiling at about 10 ft, with a ventilated space above, would make it cosier and easier to cool.","The slab still needs waterproofing, laid to fall toward courtyard 03.","The living room gets an 11'-3\" ceiling instead of the very tall one in option A."]},
 };
 // the roof sheet stops at the water tank slab (roof plan A-04), so split each panel around it
@@ -587,13 +595,20 @@ function build(key){
     if(kind==="solid") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),M.plaster,dyn);
     else if(kind==="brick") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),texMat(TX.brick,L/3,tA,{roughness:0.95}),dyn);
     else if(kind==="window"){ mesh(prism(ax,az,bx,bz,0.75,0,0,lvl+3,lvl+3),M.plaster,dyn);
-      mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); }
+      if(o.south){   // kitchen: sliding window over the sink, then the same beam, vent louvres and high glass as the doors beside it
+        glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,L/SLIDES); const bt=lvl+9.5;
+        mesh(prism(ax,az,bx,bz,0.85,lvl+8,lvl+8,bt,bt),M.plaster,dyn); highGlass([ax,az],[bx,bz],bt,tA,tB,dyn,SLIDES,L); }
+      else { mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); } }
+    else if(kind==="hv"){   // wall with a band of high glass louvres: o.y0..o.y1 above the floor (y1 omitted = up to the ceiling)
+      const y0=lvl+o.y0, y1=o.y1!=null?lvl+o.y1:Math.min(tA,tB)-0.15;
+      mesh(prism(ax,az,bx,bz,0.75,0,0,y0,y0),M.plaster,dyn); louvres(ax,az,bx,bz,y0,y1,dyn);
+      if(Math.min(tA,tB)>y1+0.05) mesh(prism(ax,az,bx,bz,0.75,y1,y1,tA,tB),M.plaster,dyn); }
     else if(kind==="teak"){ mesh(prism(ax,az,bx,bz,0.3,0,0,lvl+8,lvl+8),M.teak,dyn); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);
       if(!o.ext){ const ux=(bx-ax)/L*0.25, uz=(bz-az)/L*0.25;   // perforated vent panels at the top and bottom of each inside door and the main door, the house's joinery feature
         for(const y of [lvl+0.35,lvl+5.9]){ mesh(prism(ax+ux,az+uz,bx-ux,bz-uz,0.34,y,y,y+1.75,y+1.75),texMat(TX.perf,Math.max(1,L*1.5),1.75*1.5),dyn);
           if(o.main){ const s=o.main*0.19, nx=-(bz-az)/L*s, nz=(bx-ax)/L*s, m=M.mesh.clone(); m.map=texRep(M.mesh.map,L/0.08,1.75/0.08);   // fine insect mesh on the inside face
             mesh(prism(ax+ux+nx,az+uz+nz,bx-ux+nx,bz-uz+nz,0.02,y,y,y+1.75,y+1.75),m,dyn,false); } } } }
-    else if(kind==="glass") glassWall(ax,az,bx,bz,tA,tB,lvl,o.up||"solid",L,dyn,o.panes,o.door);
+    else if(kind==="glass") glassWall(ax,az,bx,bz,tA,tB,lvl,o.up||"solid",L,dyn,o.panes==="S"?SLIDES:o.panes,o.door);
     else if(kind==="nook") nook(ax,az,bz,tA,lvl,dyn);
     else if(kind==="head") mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn);   // open below, wall above the opening
     else if(kind==="fw"){ mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl,lvl,lvl+8,lvl+8,dyn,9,0,true); } // FW: 1'-6" x 8'-0" fixed window
@@ -615,7 +630,7 @@ function build(key){
   // parking roof columns
   for(const [x,z] of [[8.75,52.5],[30.5,55.3]]){ const t=under(sch,x,z); if(t) box(x-0.3,x+0.3,z-0.3,z+0.3,0,t,M.steel,dyn); }   // one free column at grid B (A-03)
   // vented band at grid 05: wall with small windows and hooded vent pockets
-  for(const [z0,z1,yb] of sch.cler){ const yt=under(sch,30.25,(z0+z1)/2); ventBand(z0,z1,yb,yt,roofG); }
+  for(const [z0,z1,yb,plain] of sch.cler){ const yt=under(sch,30.25,(z0+z1)/2); if(plain) mesh(prism(30.5,z0,30.5,z1,0.75,yb,yb,yt,yt),M.plaster,roofG); else ventBand(z0,z1,yb,yt,roofG); }
   airflow(sch);
   drainage(sch,roofG);
   // water tank enclosure
@@ -646,6 +661,12 @@ function tankShaft(tk,g){
   box(S.x1,47.25,S.z0,S.z1,tk.y0-0.5,tk.y1,M.plaster,g);
   for(let x=S.x0+0.4;x<S.x1;x+=0.5) box(x-0.04,x+0.04,S.z0,S.z1,tk.y1-0.1,tk.y1,M.steel,g);   // safety grille over the opening
 }
+// high glass over the paddy-side openings: a band of glass louvres on the beam (stays open when the house is locked,
+// sheltered by the roof overhang), then fixed glass up to the underside of the roof, split to line up with the slides below
+function highGlass(a,b,yb,t0,t1,g,n,W){
+  const lv=Math.min(1.3,Math.min(t0,t1)-yb-0.4); if(lv<0.4){ glazing(a[0],a[1],b[0],b[1],yb,yb,t0,t1,g,W/n,0,true); return; }
+  louvres(a[0],a[1],b[0],b[1],yb,yb+lv,g); glazing(a[0],a[1],b[0],b[1],yb+lv,yb+lv,t0,t1,g,W/n,0,true);
+}
 function glassWall(ax,az,bx,bz,tA,tB,lvl,up,L,g,panes,door=8){
   const P=1.25, ux=(bx-ax)/L, uz=(bz-az)/L, tAt=t=>lerp(tA,tB,t);
   const a=[ax+ux*P,az+uz*P], b=[bx-ux*P,bz-uz*P], t0=tAt(P/L), t1=tAt(1-P/L);
@@ -658,8 +679,7 @@ function glassWall(ax,az,bx,bz,tA,tB,lvl,up,L,g,panes,door=8){
   const beamTop=Math.min(head+1.5,Math.min(t0,t1));
   mesh(prism(a[0],a[1],b[0],b[1],0.85,head,head,beamTop,beamTop),M.plaster,g); // beam over the doors
   const room=Math.min(t0,t1)-beamTop;
-  if(up==="glass"&&room>0.5){   // SD4/SD5 (A-07): glass from the top of the beam up to the underside of the roof, following its slope
-    const W=L-2*P; glazing(a[0],a[1],b[0],b[1],beamTop,beamTop,t0,t1,g,W/(panes||4),0,true); }
+  if(up==="glass"&&room>0.5) highGlass(a,b,beamTop,t0,t1,g,panes||4,L-2*P);   // SD4/SD5 (A-07): glass from the beam up to the roof
   else if(up==="louvre"&&room>0.3){ const lt=beamTop+Math.min(1.5,room); louvres(a[0],a[1],b[0],b[1],beamTop,lt,g);
     mesh(prism(a[0],a[1],b[0],b[1],0.75,lt,lt,t0,t1),M.plaster,g); }
   else mesh(prism(a[0],a[1],b[0],b[1],0.75,beamTop,beamTop,t0,t1),M.plaster,g);
@@ -670,7 +690,10 @@ function nook(x,z0,z1,top,lvl,g){
   const zA=16.5, zB=24, X=x+2.1, ceil=lvl+8.9, y0=lvl+0.3, y1=lvl+8.5, f=0.12, w=0.375;
   // corridor wall: full-height opening into the alcove
   mesh(prism(x,z0,x,zA,0.75,0,0,top,top),M.plaster,g); mesh(prism(x,zB,x,z1,0.75,0,0,top,top),M.plaster,g);
-  mesh(prism(x,zA,x,zB,0.75,ceil,ceil,top,top),M.plaster,g);
+  { const lb=ceil+0.9, lt=top-0.3;   // louvres above the alcove roof let warm air out of the corridor; hood + alcove slab keep rain off
+    if(lt-lb>0.8){ mesh(prism(x,zA,x,zB,0.75,ceil,ceil,lb,lb),M.plaster,g); louvres(x,zA,x,zB,lb,lt,g); mesh(prism(x,zA,x,zB,0.75,lt,lt,top,top),M.plaster,g);
+      box(x,x+1.6,zA-0.3,zB+0.3,lt-0.05,lt+0.15,M.slab,g); }
+    else mesh(prism(x,zA,x,zB,0.75,ceil,ceil,top,top),M.plaster,g); }
   // alcove floor, side walls and flat roof
   box(x,X,zA,zB,0,lvl,M.plinth,g);
   mesh(prism(x,zA,X+w,zA,0.75,0,0,ceil,ceil),M.plaster,g); mesh(prism(x,zB,X+w,zB,0.75,0,0,ceil,ceil),M.plaster,g);
@@ -732,8 +755,14 @@ function ventBand(z0,z1,yb,yt,g){
 let airParts=[];
 function airflow(sch){
   airParts=[]; const g=new THREE.Group(); g.name="air"; g.visible=$("#tAir")?$("#tAir").checked:false; dyn.add(g);
-  const vented=sch.cler.length>0, V=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const paths=[
+  const vented=sch.cler.some(c=>!c[3]), V=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const closed=$("#tClosed")&&$("#tClosed").checked;
+  const paths=closed?[
+    [V(-7,9,11),V(0,9,11),V(3,9.6,10),V(6,10.5,9.5),V(9,10.6,8),V(18,11.4,4),V(22,12.1,0.5),V(22,13,-6)],          // utility louvres → kitchen → high louvres on the paddy side
+    [V(27.6,3,52),V(27.6,2.9,42),V(27.6,4.5,36),V(28,8.5,28),V(29.6,12.5,20),V(30.5,13.2,20),V(33,13.6,20),V(36,16,20)], // main door panels → corridor → nook louvres
+    [V(40,14,60),V(40,12.4,52.5),V(37,9.5,47),V(32.4,8.8,42),V(31.5,9.6,38),V(29.3,11.5,28),V(30.5,13.2,22.5),V(34,14.5,22.5)], // courtyard 01 louvres → bedroom 01 door top → corridor → nook
+    [V(24,5,10),V(31,6,8),V(37,9.5,4),V(42,12.1,0.6),V(42,13,-6)],                                                    // dining → living → high louvres
+  ]:[
     vented?[V(20,4,-30),V(20,5,-2),V(22,7,8),V(27,12,10),V(30.5,15.4,10),V(36,18.5,10),V(43,20,10)]
           :[V(20,4,-30),V(20,5,-2),V(21,6,8),V(27.5,7,18),V(34,9,20),V(37,22,20)],
     vented?[V(40,4,63),V(40,5,53),V(36,6,46),V(31,7,44),V(28,10,44),V(28,13,40),V(30.5,15.3,38),V(36,18,38),V(43,19.5,38)]
@@ -939,6 +968,10 @@ const VIEWS={
   section:{name:"Section",pos:[22,10,108],tgt:[22,8,47],cut:true},
   top:{name:"Plan",pos:[20,150,26.5],tgt:[20,0,26],noRoof:true,labels:true},
 };
+function applySlides(){ document.querySelectorAll("#slides .btn").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.n===SLIDES))); }
+document.querySelectorAll("#slides .btn").forEach(b=>b.addEventListener("click",()=>{ SLIDES=+b.dataset.n; try{ localStorage.setItem("roofStudy.slides",SLIDES); }catch(e){} applySlides(); setScheme(current); }));
+applySlides();
+$("#tClosed").addEventListener("change",()=>{ if($("#tClosed").checked&&!$("#tAir").checked) $("#tAir").click(); setScheme(current); });
 $("#views").innerHTML=Object.entries(VIEWS).map(([k,v])=>`<button class="btn" data-v="${k}" aria-pressed="false">${v.name}</button>`).join("");
 let anim=null; const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function goView(k){
