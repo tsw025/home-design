@@ -115,7 +115,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
       <ul class="good">
         <li>With the doors open, cool air comes in low through the doors facing the paddy fields and the three courtyards. Turn on <b>Air flow</b> to see the paths.</li>
         <li>With the house locked, air still moves. It comes in through louvres high in the utility's outside wall, under the eave, then through louvres up to the ceiling into the kitchen. Each inside door, and the main door, has perforated panels at the top and bottom, and the main door has insect mesh behind its holes. Turn on <b>House closed up</b> to see these paths.</li>
-        <li>Warm air rises and leaves through louvres that stay open: a band on the beam above the kitchen window and both sliding doors, sheltered by the roof overhang, and a band above the reading nook roof, under a small hood.</li>
+        <li>The paddy side has no louvres. Warm air leaves through louvres that stay open on the courtyard sides: above the living room's doors to courtyard 02, and in a band above the reading nook roof, under a small hood.</li>
         <li>Glass louvres above the courtyard doors work for the bedrooms and the study. The master washroom has its own open-to-sky planter, and the bedroom 01 shower has the shaft beside the tank.</li>
         <li>There are no openings in the blind wall. Building rules usually don't allow them on a boundary wall, so check this with your architect.</li>
       </ul>
@@ -595,9 +595,8 @@ function build(key){
     if(kind==="solid") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),M.plaster,dyn);
     else if(kind==="brick") mesh(prism(ax,az,bx,bz,0.75,0,0,tA,tB),texMat(TX.brick,L/3,tA,{roughness:0.95}),dyn);
     else if(kind==="window"){ mesh(prism(ax,az,bx,bz,0.75,0,0,lvl+3,lvl+3),M.plaster,dyn);
-      if(o.south){   // kitchen: sliding window over the sink, then a band of vent louvres; plain wall above (no high glass)
-        glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,L/SLIDES); const bt=lvl+8.15, lt=Math.min(bt+1.2,Math.min(tA,tB)-0.4);   // the roof is low here, so the louvres sit right on the window head
-        mesh(prism(ax,az,bx,bz,0.85,lvl+8,lvl+8,bt,bt),M.plaster,dyn); louvres(ax,az,bx,bz,bt,lt,dyn); mesh(prism(ax,az,bx,bz,0.75,lt,lt,tA,tB),M.plaster,dyn); }
+      if(o.south){   // kitchen: sliding window over the sink, plain wall above (no high glass, no louvres on the paddy side)
+        glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,L/SLIDES); mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); }
       else { mesh(prism(ax,az,bx,bz,0.75,lvl+8,lvl+8,tA,tB),M.plaster,dyn); glazing(ax,az,bx,bz,lvl+3,lvl+3,lvl+8,lvl+8,dyn,2.2); } }
     else if(kind==="hv"){   // wall with a band of high glass louvres: o.y0..o.y1 above the floor (y1 omitted = up to the ceiling)
       const y0=lvl+o.y0, y1=o.y1!=null?lvl+o.y1:Math.min(tA,tB)-0.15;
@@ -661,12 +660,8 @@ function tankShaft(tk,g){
   box(S.x1,47.25,S.z0,S.z1,tk.y0-0.5,tk.y1,M.plaster,g);
   for(let x=S.x0+0.4;x<S.x1;x+=0.5) box(x-0.04,x+0.04,S.z0,S.z1,tk.y1-0.1,tk.y1,M.steel,g);   // safety grille over the opening
 }
-// high glass over the paddy-side openings: a band of glass louvres on the beam (stays open when the house is locked,
-// sheltered by the roof overhang), then fixed glass up to the underside of the roof, split to line up with the slides below
-function highGlass(a,b,yb,t0,t1,g,n,W){
-  const lv=Math.min(1.3,Math.min(t0,t1)-yb-0.4); if(lv<0.4){ glazing(a[0],a[1],b[0],b[1],yb,yb,t0,t1,g,W/n,0,true); return; }
-  louvres(a[0],a[1],b[0],b[1],yb,yb+lv,g); glazing(a[0],a[1],b[0],b[1],yb+lv,yb+lv,t0,t1,g,W/n,0,true);
-}
+// high glass over the paddy-side doors: fixed glass up to the underside of the roof, split to line up with the slides below
+function highGlass(a,b,yb,t0,t1,g,n,W){ glazing(a[0],a[1],b[0],b[1],yb,yb,t0,t1,g,W/n,0,true); }
 function glassWall(ax,az,bx,bz,tA,tB,lvl,up,L,g,panes,door=8){
   const P=1.25, ux=(bx-ax)/L, uz=(bz-az)/L, tAt=t=>lerp(tA,tB,t);
   const a=[ax+ux*P,az+uz*P], b=[bx-ux*P,bz-uz*P], t0=tAt(P/L), t1=tAt(1-P/L);
@@ -758,10 +753,10 @@ function airflow(sch){
   const vented=sch.cler.some(c=>!c[3]), V=(x,y,z)=>new THREE.Vector3(x,y,z);
   const closed=$("#tClosed")&&$("#tClosed").checked;
   const paths=closed?[
-    [V(-7,9,11),V(0,9,11),V(3,9.6,10),V(6,10.5,9.5),V(9,10.6,8),V(18,11.4,4),V(22,12.1,0.5),V(22,13,-6)],          // utility louvres → kitchen → high louvres on the paddy side
+    [V(-7,9,11),V(0,9,11),V(3,9.6,10),V(6,10.5,9.5),V(10,9,8),V(20,8,7),V(29,8,8),V(36,10,11),V(37,12.2,14.75),V(37,16,18.5)], // utility louvres → kitchen, dining, living → louvres to courtyard 02
     [V(27.6,3,52),V(27.6,2.9,42),V(27.6,4.5,36),V(28,8.5,28),V(29.6,12.5,20),V(30.5,13.2,20),V(33,13.6,20),V(36,16,20)], // main door panels → corridor → nook louvres
     [V(40,14,60),V(40,12.4,52.5),V(37,9.5,47),V(32.4,8.8,42),V(31.5,9.6,38),V(29.3,11.5,28),V(30.5,13.2,22.5),V(34,14.5,22.5)], // courtyard 01 louvres → bedroom 01 door top → corridor → nook
-    [V(24,5,10),V(31,6,8),V(37,9.5,4),V(42,12.1,0.6),V(42,13,-6)],                                                    // dining → living → high louvres
+    [V(28,3.5,5),V(34,2.5,5),V(40,4,7),V(43,9,11),V(43,12.2,14.75),V(43,16,18.5)],                                       // living: air rises to the louvres over its courtyard 02 doors
   ]:[
     vented?[V(20,4,-30),V(20,5,-2),V(22,7,8),V(27,12,10),V(30.5,15.4,10),V(36,18.5,10),V(43,20,10)]
           :[V(20,4,-30),V(20,5,-2),V(21,6,8),V(27.5,7,18),V(34,9,20),V(37,22,20)],
