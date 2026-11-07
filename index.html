@@ -38,6 +38,12 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 .view{position:relative;min-width:0;background:#C9D3D0}
 #c{display:block;width:100%;height:100%;touch-action:none}
 .hud{position:absolute;left:max(12px, env(safe-area-inset-left,0px));bottom:12px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.tour{position:absolute;left:max(12px, env(safe-area-inset-left,0px));right:12px;bottom:12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:10px 12px;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.tour[hidden]{display:none}
+.tour .tcap{flex:1 1 260px;min-width:0;font-size:13px;line-height:1.4}
+.tour .tcap b{display:block;font-size:14px}
+.tour .tstep{font:500 11px/1 var(--f-mono);color:var(--muted)}
+.tour .tb{display:flex;gap:6px;flex-wrap:wrap}
 .hud span{background:rgba(20,26,22,.72);color:#F2F1EC;font:500 11px/1 var(--f-mono);padding:6px 8px;border-radius:3px;letter-spacing:.02em}
 .panel{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding-block:20px 28px;padding-left:max(20px, env(safe-area-inset-left,0px));padding-right:max(20px, env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px;min-width:0}
 .eyebrow{font:500 11px/1.3 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -94,6 +100,10 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
 <div class="app">
   <div class="view">
     <canvas id="c" aria-label="3D model of the house. Drag to orbit, scroll or pinch to zoom."></canvas>
+    <div class="tour" id="tour" hidden role="region" aria-label="Walk through" aria-live="polite">
+      <div class="tcap"><span class="tstep" id="tStep"></span><b id="tName"></b><span id="tText"></span></div>
+      <div class="tb"><button class="btn" id="tPrev">Back</button><button class="btn" id="tPlay">Pause</button><button class="btn" id="tNext">Next</button><button class="btn" id="tExit">Exit</button></div>
+    </div>
     <div class="hud" id="hud"><span>Drag to orbit · scroll to zoom · right-drag to pan</span></div>
   </div>
   <aside class="panel">
@@ -135,6 +145,7 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4
     <section>
       <h2>Views</h2>
       <div class="btns" id="views"></div>
+      <div class="btns" style="margin-top:8px"><button class="btn" id="tourBtn">Walk through the house</button></div>
     </section>
 
     <section>
@@ -936,8 +947,9 @@ const wallAt=(sch,z)=>(sch.east.find(e=>z>=e[0]&&z<=e[1])||sch.east[0])[2];
 function heightDim(sch){
   const h=wallAt(sch,47), x=48.8, z=47;
   const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,0,z),new THREE.Vector3(x,h,z),new THREE.Vector3(x-0.8,h,z),new THREE.Vector3(x+0.8,h,z),new THREE.Vector3(x,h,z),new THREE.Vector3(x,0,z),new THREE.Vector3(x-0.8,0,z),new THREE.Vector3(x+0.8,0,z)]);
-  const l=new THREE.Line(g,M.dim); l.renderOrder=9; dyn.add(l);
-  const s=label("Blind wall "+ftIn(h),{size:1.7,bg:"rgba(138,75,42,.92)",font:"500 40px 'JetBrains Mono', monospace"}); s.position.set(x+0.5,h+1.4,z); dyn.add(s);
+  const bt=new THREE.Group(); bt.name="blindtag"; bt.visible=!($("#tour")&&!$("#tour").hidden); dyn.add(bt);
+  const l=new THREE.Line(g,M.dim); l.renderOrder=9; bt.add(l);
+  const s=label("Blind wall "+ftIn(h),{size:1.7,bg:"rgba(138,75,42,.92)",font:"500 40px 'JetBrains Mono', monospace"}); s.position.set(x+0.5,h+1.4,z); bt.add(s);
 }
 
 /* ---------- night: warm room lights placed roughly as lighting layout E-02, tree spot lights, garden lamps ---------- */
@@ -1015,7 +1027,47 @@ function goView(k){
   anim={from:{p:camera.position.clone(),t:controls.target.clone()},to,t0:performance.now(),d:900};
 }
 $("#views").addEventListener("click",e=>{ const b=e.target.closest(".btn"); if(b) goView(b.dataset.v); });
-controls.addEventListener("start",()=>{ anim=null; document.querySelectorAll("#views .btn").forEach(b=>b.setAttribute("aria-pressed","false")); });
+controls.addEventListener("start",()=>{ anim=null; document.querySelectorAll("#views .btn").forEach(b=>b.setAttribute("aria-pressed","false")); if(tour) tourPlay(false); });
+
+/* ---------- walk through: eye-level stops inside the house (eye 5'-3" above each floor) ---------- */
+const TOUR=[
+  {n:"Arriving",t:"The small gate beside the parking, with the main door straight ahead at the end of the covered path.",p:[27.8,5.6,58],g:[27.6,5.4,44]},
+  {n:"Main door",t:"Perforated teak panels at the top and bottom let air through even when it is locked. The insect mesh is on the inside.",p:[27.6,5.6,49.5],g:[27.6,5.6,40]},
+  {n:"Corridor",t:"The spine of the house. The reading nook opens off it on the left, with courtyard 02 beyond.",p:[27.6,7.3,40],g:[27.8,6.6,18]},
+  {n:"Reading nook",t:"A bench pushed out into courtyard 02, with a tall picture window. The louvres above its roof let warm air out of the corridor.",p:[27.2,7.2,20.2],g:[33,6.2,20.2]},
+  {n:"Master bedroom",t:"Glass wall to the front garden, with louvres above it for air when the doors are shut.",p:[23.2,7.3,41.8],g:[13,5.8,34]},
+  {n:"Closet",t:"Walk-in dressing area. The wardrobe along grid E screens it from the bed, with a perforated vent base.",p:[13.4,7.3,23.8],g:[21,5,28.6]},
+  {n:"Master washroom",t:"Shower beside the indoor planter. The planter bay is open to the sky, and high louvres let steam out.",p:[23.6,6.8,19.4],g:[12,7.4,18.8]},
+  {n:"Kitchen",t:"The U kitchen: hob on the left, double sink under the window, island and breakfast bar on the right.",p:[13.8,7.3,12.8],g:[8.6,5,2]},
+  {n:"Dining room",t:"Dining opens to the sunken living room, down the built-in stepped seat.",p:[17,7.3,11.5],g:[38,4.5,6]},
+  {n:"Living room",t:"Sunken lounge looking out to courtyard 03 and the paddy fields. The high glass follows the roof up to the blind wall.",p:[34.6,5.8,12.6],g:[41,4.8,-4]},
+  {n:"Paddy side",t:"Looking back from courtyard 03 at the paddy-side slides, with the high glass above the beam.",p:[38,5.3,-8],g:[33,7.5,6]},
+  {n:"Study",t:"The study faces courtyard 02, with louvres above its glass doors.",p:[44.5,7.3,34.8],g:[34,5.8,27]},
+  {n:"Bedroom 01",t:"Opens to courtyard 01. Its ceiling is the tallest in the house, 13 to 15 ft.",p:[33,7.3,43.2],g:[43,6,52]},
+  {n:"Bedroom 01 washroom",t:"The shower sits under the shaft beside the water tank, open to the sky.",p:[37,6.8,39],g:[44.7,8,38.5]},
+];
+let tour=null;
+function tourShow(){ const s=TOUR[tour.i]; $("#tStep").textContent=`Stop ${tour.i+1} of ${TOUR.length}`; $("#tName").textContent=s.n; $("#tText").textContent=s.t;
+  $("#tPlay").textContent=tour.playing?"Pause":"Play"; $("#tPrev").disabled=tour.i===0; $("#tNext").disabled=tour.i===TOUR.length-1; }
+function tourGo(i){ clearTimeout(tour.timer); tour.i=Math.max(0,Math.min(TOUR.length-1,i)); const s=TOUR[tour.i], d=reduce?1:2600;
+  anim={from:{p:camera.position.clone(),t:controls.target.clone()},to:{p:new THREE.Vector3(...s.p),t:new THREE.Vector3(...s.g)},t0:performance.now(),d};
+  tourShow(); if(tour.playing){ if(tour.i<TOUR.length-1) tour.timer=setTimeout(()=>tourGo(tour.i+1),d+4200); else tour.playing=false, tourShow(); } }
+function tourPlay(on){ if(!tour) return; tour.playing=on; clearTimeout(tour.timer); if(on){ if(tour.i===TOUR.length-1) tourGo(0); else tour.timer=setTimeout(()=>tourGo(tour.i+1),1500); } tourShow(); }
+function tourStart(){ tour={i:0,playing:true,timer:0};
+  $("#tRoof").checked=true; $("#tLabels").checked=false; $("#tCut").checked=false; applyRoof(); applyLabels(); applyCut();
+  document.querySelectorAll("#views .btn").forEach(b=>b.setAttribute("aria-pressed","false"));
+  camera.fov=62; camera.updateProjectionMatrix(); controls.minDistance=0.5; controls.maxPolarAngle=Math.PI*0.62;
+  $("#tour").hidden=false; $("#hud").hidden=true; tourTags(false); tourGo(0); }
+function tourTags(on){ const b=dyn&&dyn.getObjectByName("blindtag"); if(b) b.visible=on; const h=dyn&&dyn.getObjectByName("hdims"); if(h) h.visible=on&&$("#tDims").checked; }
+function tourEnd(){ if(!tour) return; clearTimeout(tour.timer); tour=null; $("#tour").hidden=true; $("#hud").hidden=false; tourTags(true);
+  camera.fov=42; camera.updateProjectionMatrix(); controls.minDistance=6; controls.maxPolarAngle=Math.PI*0.495; goView("aerial"); }
+$("#tourBtn").addEventListener("click",tourStart);
+$("#tPrev").addEventListener("click",()=>{ tour.playing=false; tourGo(tour.i-1); });
+$("#tNext").addEventListener("click",()=>{ tour.playing=false; tourGo(tour.i+1); });
+$("#tPlay").addEventListener("click",()=>tourPlay(!tour.playing));
+$("#tExit").addEventListener("click",tourEnd);
+addEventListener("keydown",e=>{ if(!tour) return; if(e.key==="ArrowRight") $("#tNext").click(); else if(e.key==="ArrowLeft") $("#tPrev").click(); else if(e.key==="Escape") tourEnd(); });
+$("#views").addEventListener("click",()=>{ if(tour){ clearTimeout(tour.timer); tour=null; $("#tour").hidden=true; $("#hud").hidden=false; camera.fov=42; camera.updateProjectionMatrix(); controls.minDistance=6; controls.maxPolarAngle=Math.PI*0.495; } },true);
 
 function applyRoof(){ const r=dyn&&dyn.getObjectByName("roof"); if(r) r.visible=$("#tRoof").checked; }
 function applyLabels(){ annot.visible=$("#tLabels").checked; }
